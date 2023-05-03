@@ -21,6 +21,7 @@ const int N_WORDS_PER_FRAME	= 9;
 /** Algorithm specific parameters **/
 #define TOWERS_IN_ETA 34
 #define TOWERS_IN_PHI 32
+#define angle 140
 
 /** More common algorithm definitions, do not remove **/
 // N_INPUT_LINKS and N_OUTPUT_LINKS need to be numerically specified so that wrapper generators work.

@@ -1,4 +1,3 @@
-#include "algo_top_parameters.h"
 #include "algo_top.h"
 #include "cordic.h"
 #include <algorithm>
@@ -7,7 +6,6 @@
 #include "objects.h"
 using namespace std;
 using namespace algo;
-
 
 void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
 #pragma HLS PIPELINE II=9

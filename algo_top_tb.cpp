@@ -3,13 +3,11 @@
 #include <cstdlib>
 #include <stdint.h>
 #include <unistd.h>
-
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <string>
 #include "algo_top.h"
-#include "algo_top_parameters.h"
 
 using namespace std;
 

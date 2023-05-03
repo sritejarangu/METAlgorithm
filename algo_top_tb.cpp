@@ -12,8 +12,7 @@
 using namespace std;
 
 int main(){
-	//hls::stream<algo::axiword576> test_in[N_INPUT_LINKS];
-	//hls::stream<algo::axiword576> test_out[N_OUTPUT_LINKS];
+	
 	ap_uint<576> test_in[N_INPUT_LINKS];
 	ap_uint<576> test_out[N_OUTPUT_LINKS];
 

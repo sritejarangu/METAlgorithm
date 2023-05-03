@@ -28,8 +28,8 @@ namespace algo {
 
 void algo_top(
 
-	hls::stream<algo::axiword576> link_in[N_INPUT_LINKS],
-	hls::stream<algo::axiword576> link_out[N_OUTPUT_LINKS]
+		ap_uint<576> link_in[N_INPUT_LINKS],
+		ap_uint<576> link_out[N_OUTPUT_LINKS]
 );
 
 #endif /* !__ALGO_TOP_H__ */

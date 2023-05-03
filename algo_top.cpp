@@ -1,29 +1,24 @@
 #include "algo_top_parameters.h"
 #include "algo_top.h"
-#include "ap_fixed.h"
 #include "cordic.h"
 #include <algorithm>
 #include <utility>
 
-#include "../../../../include/objects.h"
+#include "objects.h"
 using namespace std;
 using namespace algo;
 
 
-void unpackInputLink(hls::stream<algo::axiword576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
-#pragma HLS PIPELINE II=N_WORDS_PER_FRAME
+void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
+#pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=towers complete dim=0
-#pragma HLS INTERFACE axis port=ilink
 #pragma HLS INLINE
 
   ap_uint<576> word_576b_;
 
-#ifndef __SYNTHESIS__
-   //Avoid simulation warnings
-  if (ilink.empty()) return;
-#endif
 
-  word_576b_ = ilink.read().data;
+
+  word_576b_ = ilink.read();
 
   towers[0]  = Tower(word_576b_( 31,   0));
   towers[1]  = Tower(word_576b_( 63,  32));
@@ -46,17 +41,16 @@ void unpackInputLink(hls::stream<algo::axiword576> &ilink, Tower towers[TOWERS_I
   return;
 }
 
-void packOutput(ap_uint<16> a[0], hls::stream<algo::axiword576> &olink){
-#pragma HLS PIPELINE II=N_OUTPUT_WORDS_PER_FRAME
+void packOutput(ap_uint<16> a[0], ap_uint<576> &olink){
+#pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=a complete dim=0
-#pragma HLS INTERFACE axis port=olink
 #pragma HLS INLINE
 
   ap_uint<576> word_576b_;
 
 
   word_576b_(15, 0) = (ap_uint<16>) a[0];
-  word_576b_(31, 15) = (ap_uint<16>) a[1];
+  word_576b_(31, 16) = (ap_uint<16>) a[1];
   word_576b_(47, 32) = (ap_uint<16>) a[2];
   word_576b_(63, 48) = (ap_uint<16>) a[3];
   word_576b_(79, 64) = (ap_uint<16>) a[4];
@@ -80,35 +74,35 @@ void packOutput(ap_uint<16> a[0], hls::stream<algo::axiword576> &olink){
   word_576b_(367, 352) = (ap_uint<16>) a[22];
   word_576b_(383, 368) = (ap_uint<16>) a[23];
   word_576b_(575, 384) = 0;
-    axiword576 r; r.last = 0; r.user = 0;
-  r.data = word_576b_;
+  ap_uint<576> r; //r.last = 0; r.user = 0;
+  r = word_576b_;
   
   olink.write(r);
 
   return ;
 }
 
-void algo_top(hls::stream<axiword576> link_in[N_INPUT_LINKS], hls::stream<axiword576> link_out[N_OUTPUT_LINKS]) {
-#pragma HLS INTERFACE axis port=link_in
-#pragma HLS INTERFACE axis port=link_out
-#pragma HLS PIPELINE II=N_WORDS_PER_FRAME
+void algo_top(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]) {
 
+#pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 
-
   // Step 1: Unpack links
   // Input is 64 links carrying 32phix34eta towers
-  Tower towers[TOWERS_IN_PHI][TOWERS_IN_ETA];
-#pragma HLS ARRAY_PARTITION variable=towers complete dim=0
+  Tower towersinpos[TOWERS_IN_PHI][TOWERS_IN_ETA/2];
+  Tower towersinneg[TOWERS_IN_PHI][TOWERS_IN_ETA/2];
+#pragma HLS ARRAY_PARTITION variable=towersinpos complete dim=0
+#pragma HLS ARRAY_PARTITION variable=towersinneg complete dim=0
+
      
   for (size_t ilink = 0; ilink < N_INPUT_LINKS/2; ilink++) {
-#pragma LOOP UNROLL
-#pragma HLS latency min=1
+      #pragma LOOP UNROLL
+      #pragma HLS latency min=1
     size_t iPosEta = ilink;
     size_t iNegEta = ilink+N_INPUT_LINKS/2;
-    unpackInputLink(link_in[iNegEta], &towers[ilink][0]);
-    unpackInputLink(link_in[iPosEta], &towers[ilink][TOWERS_IN_ETA/2]);
+    unpackInputLink(link_in[iNegEta], &towersinneg[ilink][0]);
+    unpackInputLink(link_in[iPosEta], &towersinpos[ilink][0]);
   }
 
    // Step 2: MET Algo goes here
@@ -116,59 +110,59 @@ void algo_top(hls::stream<axiword576> link_in[N_INPUT_LINKS], hls::stream<axiwor
 #pragma HLS ARRAY_PARTITION variable=Exs complete dim=0
   ap_uint<16> Eys[24];
 #pragma HLS ARRAY_PARTITION variable=Eys complete dim=0
+  COS_SIN_TYPE sinphi[angle];
+#pragma HLS ARRAY_PARTITION variable=sinphi complete dim=0
+  COS_SIN_TYPE cosphi[angle];
+#pragma HLS ARRAY_PARTITION variable=cosphi complete dim=0
 
-  ap_fixed<16,2> SIN_PHI[TOWERS_IN_PHI];
-  ap_fixed<16,2> COS_PHI[TOWERS_IN_PHI];
+  for (ap_uint<8> c = 0; c < angle; c++) {
+     #pragma hls unroll
 
+     THETA_TYPE  radian= (c+2.5)*0.0174533;     /* sin and cos calculation*/
+     cordic(radian, sinphi[c],cosphi[c]);
+    }
 
   for (ap_uint<5> b = 4; b < 28; b++) {
-  #pragma LOOP UNROLL
+   #pragma hls unroll
+   #pragma HLS latency min=1
 
-	  ap_fixed<16,8> Ey; ap_fixed<16,8> Ex;
-	  ap_uint<16> j;
+   ap_uint<8> phi;
 
-	   		ap_uint<16> p; ap_uint<16> d; ap_uint<16> e; ap_uint<16> f; ap_uint<16> g; ap_uint<16> h; ap_uint<16> k;
-	   		  		  		    		ap_uint<16> l; ap_uint<16> m; ap_uint<16> n; ap_uint<16> o;
+	  if (b<36)
+	  phi=180*b/36;     /*calulating theta of the respective tower*/
+	  else
+	  phi= -180*(72-b)/36;
+	  //cout<< "phi is"<< phi<< endl;
 
-	   		  		  		    		p= towers[b][0].tower_et() + towers[b][1].tower_et() + towers[b][2].tower_et() + towers[b][3].tower_et() ;
-	   		  		  		    		d= towers[b][4].tower_et() + towers[b][5].tower_et() + towers[b][6].tower_et() + towers[b][7].tower_et() ;
-	   		  		  		    		e= towers[b][8].tower_et() + towers[b][9].tower_et() + towers[b][10].tower_et() + towers[b][11].tower_et() ;
-	   		  		  		    		f= towers[b][12].tower_et() + towers[b][13].tower_et() + towers[b][14].tower_et() + towers[b][15].tower_et() ;
-	   		  		  		    		g= towers[b][16].tower_et() + towers[b][17].tower_et() + towers[b][18].tower_et() + towers[b][19].tower_et() ;
-	   		  		  		    		h= towers[b][20].tower_et() + towers[b][21].tower_et() + towers[b][22].tower_et() + towers[b][23].tower_et() ;
-	   		  		  		    		k= towers[b][24].tower_et() + towers[b][25].tower_et() + towers[b][26].tower_et() + towers[b][27].tower_et() ;
-	   		  		  		    		l= towers[b][28].tower_et() + towers[b][29].tower_et() + towers[b][30].tower_et() + towers[b][31].tower_et() ;
-	   		  		  		    		m= towers[b][32].tower_et() + towers[b][33].tower_et();
-	   		  		  		    		n=p+d+e+f;
-	   		  		  		    		o=g+h+k+l;
+	  ap_fixed<16,12> Ey; ap_fixed<16,12> Ex; ap_uint<16> j;
+	 
+	  ap_uint<16> p; ap_uint<16> h;
 
-	   		  		  		    		j=n+o+m;
-	   		  		  		    		//cout<< "tower sum is " << j <<
-	   		for (ap_uint<5> c = 4; c < 28; c++) {
-	   		  		#pragma LOOP UNROLL
-	   		  		 ap_fixed<16,2>  sinphi;
-	   		  	     ap_fixed<16,2> cosphi;
-	   		  		 double radian= (c*5+2.5)*0.0174533;
+	  p= towersinpos[b][0].tower_et() + towersinpos[b][1].tower_et() + towersinpos[b][2].tower_et() + towersinpos[b][3].tower_et() + towersinpos[b][4].tower_et()
+	     + towersinpos[b][5].tower_et() + towersinpos[b][6].tower_et() + towersinpos[b][7].tower_et() + towersinpos[b][8].tower_et() + towersinpos[b][9].tower_et()
+	     + towersinpos[b][10].tower_et() + towersinpos[b][11].tower_et() + towersinpos[b][12].tower_et() + towersinpos[b][13].tower_et() + towersinpos[b][14].tower_et()
+	     + towersinpos[b][15].tower_et() + towersinpos[b][16].tower_et() ;
 
-	   		  cordic(radian, sinphi, cosphi);
+	  h= towersinneg[b][0].tower_et() + towersinneg[b][1].tower_et() + towersinneg[b][2].tower_et() + towersinneg[b][3].tower_et() + towersinneg[b][4].tower_et()
+	  + towersinneg[b][5].tower_et() + towersinneg[b][6].tower_et() + towersinneg[b][7].tower_et() + towersinneg[b][8].tower_et() + towersinneg[b][9].tower_et()
+	  + towersinneg[b][10].tower_et() + towersinneg[b][11].tower_et() + towersinneg[b][12].tower_et() + towersinneg[b][13].tower_et() + towersinneg[b][14].tower_et()
+	  + towersinneg[b][15].tower_et() + towersinneg[b][16].tower_et();
 
-	   		 SIN_PHI[c] = sinphi;
-	   		 COS_PHI[c] = cosphi;
-	   		 Ey = SIN_PHI[b]*j;
-	   		 //cout << "sinphi value "<< SIN_PHI[b]<< endl;
-	   		 //cout << Ey << endl;
-	   		 Eys[b-4] = Ey;
-	   		 Ex = COS_PHI[b]*j;
-	   		 Exs[b-4] = Ex;
-	   		 //cout << "cosphi value "<< COS_PHI[b]<< endl;
-	   		 //cout << Ex <<endl;
+	  j= p + h;
 
-
-  }
-
+  		Ey = sinphi[phi]*j;
+  		//cout << Ey << endl;
+  		Eys[b-4] = Ey;
+  		Ex = cosphi[phi]*j;
+  		Exs[b-4] = Ex;
+  		//cout << Ex <<endl;
   	}
   // Step 3: Pack the outputs
 
     packOutput(&Exs[0],link_out[0]);
     packOutput(&Eys[0],link_out[1]);
 }
+
+
+
+

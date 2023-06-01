@@ -10,7 +10,7 @@ using namespace algo;
 void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
 #pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=towers complete dim=0
-#pragma HLS INLINE
+//#pragma HLS INLINE
 
   ap_uint<576> word_576b_;
 
@@ -42,7 +42,7 @@ void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
 void packOutput(ap_uint<16> a[0], ap_uint<576> &olink){
 #pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=a complete dim=0
-#pragma HLS INLINE
+//#pragma HLS INLINE
 
   ap_uint<576> word_576b_;
 

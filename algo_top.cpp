@@ -8,9 +8,9 @@ using namespace std;
 using namespace algo;
 
 void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
-#pragma HLS PIPELINE II=9
+
 #pragma HLS ARRAY_PARTITION variable=towers complete dim=0
-//#pragma HLS INLINE
+#pragma HLS INLINE
 
   ap_uint<576> word_576b_;
 
@@ -40,9 +40,9 @@ void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA/2]) {
 }
 
 void packOutput(ap_uint<16> a[0], ap_uint<576> &olink){
-#pragma HLS PIPELINE II=9
+
 #pragma HLS ARRAY_PARTITION variable=a complete dim=0
-//#pragma HLS INLINE
+#pragma HLS INLINE
 
   ap_uint<576> word_576b_;
 
@@ -85,7 +85,8 @@ void algo_top(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPU
 #pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
-
+#pragma HLS INTERFACE ap_ctrl_hs port=return
+	
   // Step 1: Unpack links
   // Input is 64 links carrying 32phix34eta towers
   Tower towersinpos[TOWERS_IN_PHI][TOWERS_IN_ETA/2];
@@ -96,7 +97,7 @@ void algo_top(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPU
      
   for (size_t ilink = 0; ilink < N_INPUT_LINKS/2; ilink++) {
       #pragma LOOP UNROLL
-      #pragma HLS latency min=1
+     
     size_t iPosEta = ilink;
     size_t iNegEta = ilink+N_INPUT_LINKS/2;
     unpackInputLink(link_in[iNegEta], &towersinneg[ilink][0]);
@@ -122,7 +123,7 @@ void algo_top(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPU
 
   for (ap_uint<5> b = 4; b < 28; b++) {
    #pragma hls unroll
-   #pragma HLS latency min=1
+   
 
    ap_uint<8> phi;
 

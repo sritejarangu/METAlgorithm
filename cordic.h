@@ -3,10 +3,9 @@
 #include "ap_fixed.h"
 
 typedef unsigned int UINTYPE_12;
-typedef ap_fixed<32,25_AP_RND_ZERO>  THETA_TYPE;
-typedef ap_fixed<32,25_AP_RND_ZERO> COS_SIN_TYPE;
-/*typedef ap_fixed<32,25_AP_RND_INF>  THETA_TYPE;
-typedef ap_fixed<32,25_AP_RND_INF> COS_SIN_TYPE;*/
+typedef ap_fixed<32,25_AP_RND_INF>  THETA_TYPE;
+typedef ap_fixed<32,25_AP_RND_INF> COS_SIN_TYPE;
+
 const ap_uint<5> NUM_ITERATIONS=8;
 static  THETA_TYPE cordic_phase[10]={0.78539816339744828000,0.46364760900080609000,
  		                     0.24497866312686414000,0.12435499454676144000,0.06241880999595735000,

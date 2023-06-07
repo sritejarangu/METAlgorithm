@@ -39,7 +39,7 @@ void OutputLinkPack(ap_uint<16> Exs[24], ap_uint<16> Eys[24], ap_uint<576> link_
 #pragma HLS ARRAY_PARTITION variable=Eys complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 #pragma HLS PIPELINE II=9
-#pragma HLS LATENCY min=9
+//#pragma HLS LATENCY min=9
 
 link_out[0] = 0;
 size_t start = 0;

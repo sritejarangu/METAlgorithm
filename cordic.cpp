@@ -61,12 +61,12 @@ void cordic (THETA_TYPE theta,  COS_SIN_TYPE &s, COS_SIN_TYPE &c)
 
   }
 
-  //c = (quadrant==QUAD1 || quadrant==QUAD4) ? current_cos : -current_cos;
-  //s = (quadrant==QUAD1 || quadrant==QUAD2) ? current_sin : -current_sin;
+  //c = (quadrant==QUAD1 || quadrant==QUAD2) ? current_cos : -current_cos;
+  
 
   s = current_sin;
   //c = (quadrant==QUAD1) ? current_cos : -current_cos;
-    if(QUAD1 == quadrant){
+    if(quadrant == QUAD1){
   	  c =  current_cos;
     }
     else{
